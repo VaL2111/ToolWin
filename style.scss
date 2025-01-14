@@ -1,0 +1,132 @@
+body {
+	margin: 0;
+	font-family: Arial, sans-serif;
+	overflow: hidden;
+}
+
+/* Меню */
+.menu {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background-color: #333;
+	height: 35px;
+	padding: 15px 30px;
+	color: white;
+	font-size: 18px;
+}
+
+/* Кнопка на меню */
+.menu button {
+	color: white;
+	background: none;
+	border: 1px solid rgb(176, 175, 175);
+	border-radius: 7%;
+	padding: 5px 15px;
+	font-size: 16px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.menu button:hover {
+	background-color: #555;
+}
+
+.menu button:active {
+	background-color: #404040
+}
+
+/* ToolWin(вікно) */
+#toolwin {
+	position: absolute;
+	top: 100px;
+	left: 100px;
+	background-color: lightgray;
+	border: 1px solid black;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Заголовок ToolWin */
+#toolwin-title {
+	background-color: #0078D7;
+	color: white;
+	height: 30px;
+	padding: 20px 5px 0px 5px;
+	font-size: 16px;
+	font-weight: bold;
+	cursor: move;
+	user-select: none;
+	overflow: hidden;
+}
+
+/* Кнопка закриття ToolWin */
+#close-toolwin-btn {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+	user-select: none;
+}
+
+#close-toolwin-btn img {
+	width: 100%;
+	height: 100%;
+}
+
+/* Контейнер для кнопок всередині ToolWin */
+#button-container {
+	display: grid;
+	gap: 10px;
+	padding: 5px;
+	justify-content: center;
+}
+
+/* Кнопки всередині контейнера */
+#button-container button {
+	width: 50px;
+	height: 50px;
+	background-color: #489de1;
+	color: white;
+	border: 2px solid #005BB5;
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: bold;
+	cursor: pointer;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: 70%;
+	transition: background-color 0.2s, transform 0.2s;
+}
+
+#button-container button:hover {
+	background-size: 80%;
+	background-color: #005BB5;
+	transform: scale(1.05);
+}
+
+#button-container button:active {
+	background-color: #003E80;
+	transform: scale(0.95);
+}
+
+#button-container button.active {
+	background-color: #28A745;
+	border-color: #1E7E34;
+	box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+/* Підказки для кнопок */
+#tooltip {
+	position: absolute;
+	background: rgba(0, 0, 0, 0.8);
+	color: white;
+	padding: 5px 10px;
+	border-radius: 5px;
+	font-size: 12px;
+	z-index: 1000;
+	display: none;
+	pointer-events: none;
+	box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+}
