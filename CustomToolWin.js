@@ -7,16 +7,18 @@ export class CustomToolWin extends ToolWin {
    #activeDrawHandler;
    #canvas;
    #context;
+	#color;
+	#shapeTypes
 
    constructor() {
       super();
 
       this.#actions = {
-         "Малювання точки": this.drawDot.bind(this),
-         "Малювання лінії": this.drawLine.bind(this),
-         "Малювання прямокутника": this.drawRectangle.bind(this),
-         "Малювання еліпса": this.drawEllipse.bind(this),
-         "Малювання круга": this.drawCircle.bind(this),
+         "Малювання точки": this.drawShapes.bind(this),
+         "Малювання лінії": this.drawShapes.bind(this),
+         "Малювання прямокутника": this.drawShapes.bind(this),
+         "Малювання еліпса": this.drawShapes.bind(this),
+         "Малювання круга": this.drawShapes.bind(this),
          "Інструмент заливання": this.enableFill.bind(this),
          "Інструмент ластик": this.enableEraser.bind(this),
          "Переміщення об'єкту": this.enableMoveObject.bind(this),
@@ -25,31 +27,253 @@ export class CustomToolWin extends ToolWin {
          "Скасування останньої дії": this.enableUndo.bind(this),
          "Зміна кольору": this.enableColorChange.bind(this),
          "Зміна товщини": this.enableThicknessChange.bind(this),
-         Очищення: this.enableClear.bind(this),
+         "Очищення": this.enableClear.bind(this),
       };
 
       this.#shapes = [];
       this.#activeButton = null;
       this.#activeDrawHandler = null;
+		this.#color = "black";
+		this.#shapeTypes = {
+			dot: "Малювання точки",
+			line: "Малювання лінії",
+			rectangle: "Малювання прямокутника",
+			ellipse: "Малювання еліпса",
+			circle: "Малювання круга",
+		}
 
       this.#canvas = document.getElementById("drawingCanvas");
       this.#context = this.#canvas.getContext("2d");
    }
 
-   drawDot(event) {
-      const canvas = this.#canvas;
+	drawShapes() {
+		const canvas = this.#canvas;
       const ctx = this.#context;
       const shapes = this.#shapes;
+		const color = this.#color;
+		const shapeTypes = this.#shapeTypes;
+		const currentShapeType = this.#activeButton;
+
+      let isDrawing = false;
+      let startX = null;
+      let startY = null;
+      let endX = null;
+      let endY = null;
+
+		const rect = canvas.getBoundingClientRect();
+
+      const onMouseDown = (event) => {
+         startX = event.clientX - rect.left;
+         startY = event.clientY - rect.top;
+
+         isDrawing = true;
+      };
+
+      const onMouseMove = (event) => {
+         if (!isDrawing) return;
+
+         endX = event.clientX - rect.left;
+         endY = event.clientY - rect.top;
+
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+         this.redrawShapes();
+
+			const rubberFootprintColor = "red";
+
+			if (startX !== null && startY !== null) {
+				switch (currentShapeType) {
+					case shapeTypes.dot:
+						break;
+					case shapeTypes.line:
+						this.drawingLine(
+							startX, 
+							startY, 
+							endX, 
+							endY, 
+							rubberFootprintColor
+						);
+						break;
+					case shapeTypes.rectangle:
+						const width = endX - startX;
+            		const height = endY - startY;
+
+            		this.drawingRectangle(
+							startX, 
+							startY, 
+							width, 
+							height, 
+							rubberFootprintColor
+						);
+						break;
+					case shapeTypes.ellipse:
+						const centerEllipseX = (startX + endX) / 2;
+						const centerEllipseY = (startY + endY) / 2;
+						const radiusX = Math.abs(endX - startX) / 2;
+						const radiusY = Math.abs(endY - startY) / 2;
+
+						this.drawingEllipse(
+							centerEllipseX, 
+							centerEllipseY, 
+							radiusX, 
+							radiusY, 
+							rubberFootprintColor
+						);
+						break;
+					case shapeTypes.circle:
+						const radius =
+               		Math.max(Math.abs(endX - startX), Math.abs(endY - startY)) / 2;
+						const centerCircleX = (startX + endX) / 2;
+						const centerCircleY = (startY + endY) / 2;
+
+						this.drawingCircle(
+							centerCircleX, 
+							centerCircleY, 
+							radius, 
+							rubberFootprintColor
+						);
+						break;
+					default:
+						throw new Error("Такої фігури не існує.");
+				}
+			}
+      };
+
+      const onMouseUp = (event) => {
+         if (!isDrawing) return;
+
+         isDrawing = false;
+
+         endX = event.clientX - rect.left;
+         endY = event.clientY - rect.top;
+
+         if (startX !== null && startY !== null) {
+            switch (currentShapeType) {
+					case shapeTypes.dot:
+						this.drawingDot(startX, startY, color);
+
+						shapes.push({ type: shapeTypes.dot, startX, startY, color });
+
+						console.log("Точка малюється.", { startX, startY, color });
+						console.log("Список фігур:", shapes);
+						break;
+					case shapeTypes.line:
+						this.drawingLine(startX, startY, endX, endY, color);
+
+						shapes.push({
+							type: shapeTypes.line,
+							startX,
+							startY,
+							endX,
+							endY,
+							color,
+						});
+
+						console.log("Лінія намальована.", { startX, startY, endX, endY, color });
+						console.log("Список фігур:", shapes);
+						break;
+					case shapeTypes.rectangle:
+						const width = endX - startX;
+						const height = endY - startY;
+
+						this.drawingRectangle(startX, startY, width, height, color);
+
+						shapes.push({
+							type: shapeTypes.rectangle,
+							startX,
+							startY,
+							width,
+							height,
+							color,
+						});
+
+						console.log("Прямокутник намальовано.", {
+							startX,
+							startY,
+							width,
+							height,
+							color,
+						});
+						console.log("Список фігур:", shapes);
+						break;
+					case shapeTypes.ellipse:
+						const centerEllipseX = (startX + endX) / 2;
+						const centerEllipseY = (startY + endY) / 2;
+						const radiusX = Math.abs(endX - startX) / 2;
+						const radiusY = Math.abs(endY - startY) / 2;
+
+						this.drawingEllipse(centerEllipseX, centerEllipseY, radiusX, radiusY, color);
+
+						shapes.push({
+							type: shapeTypes.ellipse,
+							centerEllipseX,
+							centerEllipseY,
+							radiusX,
+							radiusY,
+							color,
+						});
+
+						console.log("Еліпс намальовано.", {
+							centerEllipseX,
+							centerEllipseY,
+							radiusX,
+							radiusY,
+							color,
+						});
+						console.log("Список фігур:", shapes);
+						break;
+					case shapeTypes.circle:
+						const radius =
+               		Math.max(Math.abs(endX - startX), Math.abs(endY - startY)) / 2;
+
+						const centerCircleX = (startX + endX) / 2;
+						const centerCircleY = (startY + endY) / 2;
+
+						this.drawingCircle(centerCircleX, centerCircleY, radius, color);
+
+						shapes.push({
+							type: shapeTypes.circle,
+							centerCircleX,
+							centerCircleY,
+							radius,
+							color,
+						});
+
+						console.log("Круг намальовано.", { centerCircleX, centerCircleY, radius, color });
+						console.log("Список фігур:", shapes);
+						break;
+					default:
+						throw new Error("Такої фігури не існує.");
+				}
+         }
+
+         startX = null;
+         startY = null;
+         endX = null;
+         endY = null;
+
+         canvas.removeEventListener("mousemove", onMouseMove);
+         canvas.removeEventListener("mouseup", onMouseUp);
+      };
+
+      canvas.addEventListener("mousedown", onMouseDown);
+      canvas.addEventListener("mousemove", onMouseMove);
+      canvas.addEventListener("mouseup", onMouseUp);
+	}
+/*
+   drawDot(event) {
+      const canvas = this.#canvas;
+      const shapes = this.#shapes;
+		const color = this.#color;
 
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      this.drawingDot(x, y);
+      this.drawingDot(x, y, color);
 
-      shapes.push({ type: "dot", x, y });
+      shapes.push({ type: "dot", x, y, color });
 
-      console.log("Точка малюється.", { x, y });
+      console.log("Точка малюється.", { x, y, color });
       console.log("Список фігур:", shapes);
    }
 
@@ -378,13 +602,13 @@ export class CustomToolWin extends ToolWin {
       canvas.addEventListener("mousemove", onMouseMove);
       canvas.addEventListener("mouseup", onMouseUp);
    }
-
-   drawingDot(x, y) {
+*/
+   drawingDot(x, y, color) {
       const ctx = this.#context;
 
       ctx.beginPath();
       ctx.arc(x, y, 2, 0, 2 * Math.PI);
-      ctx.fillStyle = "black";
+      ctx.fillStyle = color;
       ctx.fill();
    }
 
@@ -431,48 +655,48 @@ export class CustomToolWin extends ToolWin {
 
    redrawShapes(ctx) {
       const shapes = this.#shapes;
+		const shapeTypes = this.#shapeTypes;
 
       shapes.forEach((shape) => {
          const shapeType = shape.type;
-         const shapeColor = "black";
 
          switch (shapeType) {
-            case "dot":
-               this.drawingDot(shape.x, shape.y);
+            case shapeTypes.dot:
+               this.drawingDot(shape.startX, shape.startY, shape.color );
                break;
-            case "line":
+            case shapeTypes.line:
                this.drawingLine(
                   shape.startX,
                   shape.startY,
                   shape.endX,
                   shape.endY,
-                  shapeColor
+                  shape.color,
                );
                break;
-            case "rectangle":
+            case shapeTypes.rectangle:
                this.drawingRectangle(
                   shape.startX,
                   shape.startY,
                   shape.width,
                   shape.height,
-                  shapeColor
+                  shape.color,
                );
                break;
-            case "ellipse":
+            case shapeTypes.ellipse:
                this.drawingEllipse(
-                  shape.centerX,
-                  shape.centerY,
+                  shape.centerEllipseX,
+                  shape.centerEllipseY,
                   shape.radiusX,
                   shape.radiusY,
-                  shapeColor
+                  shape.color,
                );
                break;
-            case "circle":
+            case shapeTypes.circle:
                this.drawingCircle(
-                  shape.centerX,
-                  shape.centerY,
+                  shape.centerCircleX,
+                  shape.centerCircleY,
                   shape.radius,
-                  shapeColor
+                  shape.color,
                );
                break;
             default:
@@ -480,6 +704,8 @@ export class CustomToolWin extends ToolWin {
          }
       });
    }
+
+   // =============================================================
 
    enableFill() {
       console.log("Інструмент заливання виконується.");
