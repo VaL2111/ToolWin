@@ -62,8 +62,6 @@ export class CustomToolWin extends ToolWin {
 
     const rect = canvas.getBoundingClientRect();
 
-    canvas.addEventListener("mousedown", onMouseDown);
-
     const calculateCoordinates = (event) => {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
@@ -217,6 +215,8 @@ export class CustomToolWin extends ToolWin {
       canvas.removeEventListener("mousemove", onMouseMove);
       canvas.removeEventListener("mouseup", onMouseUp);
     };
+
+		canvas.addEventListener("mousedown", onMouseDown);
   }
 
   drawDot(x, y, color) {
@@ -245,7 +245,7 @@ export class CustomToolWin extends ToolWin {
     ctx.beginPath();
     ctx.rect(startX, startY, width, height);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
 
@@ -255,7 +255,7 @@ export class CustomToolWin extends ToolWin {
     ctx.beginPath();
     ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
 
@@ -379,6 +379,7 @@ export class CustomToolWin extends ToolWin {
     this.#activeDrawHandler = this.#actions[buttonName];
 
     canvas.addEventListener("click", this.#activeDrawHandler);
+		this.#activeDrawHandler();
 
     console.log(`${buttonName} активовано.`);
   }
