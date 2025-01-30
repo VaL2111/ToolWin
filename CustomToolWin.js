@@ -4,7 +4,7 @@ export class CustomToolWin extends ToolWin {
   #actions;
   #shapes;
   #activeButton;
-  #activeDrawHandler;
+  #activeHandler;
   #canvas;
   #context;
   #color;
@@ -32,7 +32,7 @@ export class CustomToolWin extends ToolWin {
 
     this.#shapes = [];
     this.#activeButton = null;
-    this.#activeDrawHandler = null;
+    this.#activeHandler = null;
     this.#color = "black";
     this.#shapeTypes = {
       dot: "Малювання точки",
@@ -319,8 +319,6 @@ export class CustomToolWin extends ToolWin {
     });
   }
 
-  // =============================================================
-
   enableFill() {
     console.log("Інструмент заливання виконується.");
   }
@@ -361,25 +359,25 @@ export class CustomToolWin extends ToolWin {
     const canvas = this.#canvas;
 
     if (this.#activeButton === buttonName) {
-      canvas.removeEventListener("click", this.#activeDrawHandler);
+      canvas.removeEventListener("click", this.#activeHandler);
       console.log(`${this.#activeButton} деактивовано.`);
 
       this.#activeButton = null;
-      this.#activeDrawHandler = null;
+      this.#activeHandler = null;
 
       return;
     }
 
-    if (this.#activeDrawHandler) {
-      canvas.removeEventListener("click", this.#activeDrawHandler);
+    if (this.#activeHandler) {
+      canvas.removeEventListener("click", this.#activeHandler);
       console.log(`${this.#activeButton} деактивовано.`);
     }
 
     this.#activeButton = buttonName;
-    this.#activeDrawHandler = this.#actions[buttonName];
+    this.#activeHandler = this.#actions[buttonName];
 
-    canvas.addEventListener("click", this.#activeDrawHandler);
-		this.#activeDrawHandler();
+    canvas.addEventListener("click", this.#activeHandler);
+		this.#activeHandler();
 
     console.log(`${buttonName} активовано.`);
   }
