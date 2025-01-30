@@ -9,6 +9,8 @@ export class CustomToolWin extends ToolWin {
   #context;
   #color;
   #shapeTypes;
+	#zoomLevel;
+	#button;
 
   constructor() {
     super();
@@ -41,6 +43,9 @@ export class CustomToolWin extends ToolWin {
       ellipse: "Малювання еліпса",
       circle: "Малювання круга",
     };
+
+		this.#zoomLevel = 1;
+		this.#button = null;
 
     this.#canvas = document.getElementById("drawingCanvas");
     this.#context = this.#canvas.getContext("2d");
@@ -332,11 +337,41 @@ export class CustomToolWin extends ToolWin {
   }
 
   enableZoomIn() {
-    console.log("Інструмент збільшення виконується.");
+    const ctx = this.#context;
+		const canvas = this.#canvas;
+
+		ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
+    this.#zoomLevel = Math.min(2, this.#zoomLevel * 1.2);
+
+    ctx.setTransform(this.#zoomLevel, 0, 0, this.#zoomLevel, 0, 0);
+    this.redrawShapes();
+
+		canvas.removeEventListener("click", this.#activeHandler);
+		this.#activeButton = null;
+    this.#activeHandler = null;
+
+		setTimeout(() => {
+			this.#button.classList.remove("active");
+		}, 250);
   }
 
   enableZoomOut() {
-    console.log("Інструмент зменшення виконується.");
+    const ctx = this.#context;
+		const canvas = this.#canvas;
+
+		ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
+    this.#zoomLevel = Math.max(0.5, this.#zoomLevel / 1.2);
+
+    ctx.setTransform(this.#zoomLevel, 0, 0, this.#zoomLevel, 0, 0);
+    this.redrawShapes();
+
+		canvas.removeEventListener("click", this.#activeHandler);
+		this.#activeButton = null;
+    this.#activeHandler = null;
+
+		setTimeout(() => {
+			this.#button.classList.remove("active");
+		}, 250);
   }
 
   enableUndo() {
@@ -389,7 +424,10 @@ export class CustomToolWin extends ToolWin {
 
     buttons.forEach((button, index) => {
       const tooltip = tooltips[index];
-      button.addEventListener("click", () => this.toggleButton(tooltip));
+      button.addEventListener("click", () => {
+				this.#button = button;
+				this.toggleButton(tooltip);
+			});
     });
   }
 }
