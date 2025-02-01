@@ -29,7 +29,7 @@ export class CustomToolWin extends ToolWin {
       "Скасування останньої дії": this.enableUndo.bind(this),
       "Зміна кольору": this.enableColorChange.bind(this),
       "Зміна товщини": this.enableThicknessChange.bind(this),
-      "Очищення": this.enableClear.bind(this),
+      Очищення: this.enableClear.bind(this),
     };
 
     this.#shapes = [];
@@ -337,26 +337,52 @@ export class CustomToolWin extends ToolWin {
   }
 
   enableZoomIn() {
-		const maxZoom = 2.0736;
+    const maxZoom = 2.0736;
     this.#zoomLevel = Math.min(maxZoom, this.#zoomLevel * 1.2);
-		this.rezoom();
+    this.rezoom();
   }
 
   enableZoomOut() {
-		const minZoom = 0.482253086;
+    const minZoom = 0.482253086;
     this.#zoomLevel = Math.max(minZoom, this.#zoomLevel / 1.2);
-		this.rezoom();
+    this.rezoom();
   }
 
   rezoom() {
     const ctx = this.#context;
     const canvas = this.#canvas;
-		const zoomLevel = this.#zoomLevel;
-		const currentButton = this.#currentButton;
+    const zoomLevel = this.#zoomLevel;
 
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
     this.redrawShapes();
+
+		this.resetActiveState();
+  }
+
+  enableUndo() {
+    const shapes = this.#shapes;
+    const canvas = this.#canvas;
+
+    if (shapes.length === 0) {
+      this.resetActiveState();
+      return;
+    }
+
+    const ctx = this.#context;
+
+    shapes.pop();
+    console.log("Останню дію скасовано.");
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.redrawShapes();
+
+    this.resetActiveState();
+  }
+
+  resetActiveState() {
+    const canvas = this.#canvas;
+    const currentButton = this.#currentButton;
 
     canvas.removeEventListener("click", this.#activeHandler);
     this.#activeButton = null;
@@ -365,10 +391,6 @@ export class CustomToolWin extends ToolWin {
     setTimeout(() => {
       currentButton.classList.remove("active");
     }, 250);
-  }
-
-  enableUndo() {
-    console.log("Скасування останньої дії виконується.");
   }
 
   enableColorChange() {
