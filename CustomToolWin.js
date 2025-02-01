@@ -9,6 +9,8 @@ export class CustomToolWin extends ToolWin {
   #context;
   #color;
   #shapeTypes;
+  #zoomLevel;
+  #currentButton;
 
   constructor() {
     super();
@@ -42,6 +44,9 @@ export class CustomToolWin extends ToolWin {
       circle: "Малювання круга",
     };
 
+    this.#zoomLevel = 1;
+    this.#currentButton = null;
+
     this.#canvas = document.getElementById("drawingCanvas");
     this.#context = this.#canvas.getContext("2d");
   }
@@ -63,8 +68,8 @@ export class CustomToolWin extends ToolWin {
     const rect = canvas.getBoundingClientRect();
 
     const calculateCoordinates = (event) => {
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = (event.clientX - rect.left) / this.#zoomLevel;
+      const y = (event.clientY - rect.top) / this.#zoomLevel;
 
       return { x, y };
     };
@@ -216,7 +221,7 @@ export class CustomToolWin extends ToolWin {
       canvas.removeEventListener("mouseup", onMouseUp);
     };
 
-		canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener("mousedown", onMouseDown);
   }
 
   drawDot(x, y, color) {
@@ -332,11 +337,34 @@ export class CustomToolWin extends ToolWin {
   }
 
   enableZoomIn() {
-    console.log("Інструмент збільшення виконується.");
+		const maxZoom = 2.0736;
+    this.#zoomLevel = Math.min(maxZoom, this.#zoomLevel * 1.2);
+		this.rezoom();
   }
 
   enableZoomOut() {
-    console.log("Інструмент зменшення виконується.");
+		const minZoom = 0.482253086;
+    this.#zoomLevel = Math.max(minZoom, this.#zoomLevel / 1.2);
+		this.rezoom();
+  }
+
+  rezoom() {
+    const ctx = this.#context;
+    const canvas = this.#canvas;
+		const zoomLevel = this.#zoomLevel;
+		const currentButton = this.#currentButton;
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
+    this.redrawShapes();
+
+    canvas.removeEventListener("click", this.#activeHandler);
+    this.#activeButton = null;
+    this.#activeHandler = null;
+
+    setTimeout(() => {
+      currentButton.classList.remove("active");
+    }, 250);
   }
 
   enableUndo() {
@@ -377,7 +405,7 @@ export class CustomToolWin extends ToolWin {
     this.#activeHandler = this.#actions[buttonName];
 
     canvas.addEventListener("click", this.#activeHandler);
-		this.#activeHandler();
+    this.#activeHandler();
 
     console.log(`${buttonName} активовано.`);
   }
@@ -389,7 +417,10 @@ export class CustomToolWin extends ToolWin {
 
     buttons.forEach((button, index) => {
       const tooltip = tooltips[index];
-      button.addEventListener("click", () => this.toggleButton(tooltip));
+      button.addEventListener("click", () => {
+        this.#currentButton = button;
+        this.toggleButton(tooltip);
+      });
     });
   }
 }
