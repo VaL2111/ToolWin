@@ -9,8 +9,8 @@ export class CustomToolWin extends ToolWin {
   #context;
   #color;
   #shapeTypes;
-	#zoomLevel;
-	#button;
+  #zoomLevel;
+  #currentButton;
 
   constructor() {
     super();
@@ -44,8 +44,8 @@ export class CustomToolWin extends ToolWin {
       circle: "Малювання круга",
     };
 
-		this.#zoomLevel = 1;
-		this.#button = null;
+    this.#zoomLevel = 1;
+    this.#currentButton = null;
 
     this.#canvas = document.getElementById("drawingCanvas");
     this.#context = this.#canvas.getContext("2d");
@@ -68,8 +68,8 @@ export class CustomToolWin extends ToolWin {
     const rect = canvas.getBoundingClientRect();
 
     const calculateCoordinates = (event) => {
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = (event.clientX - rect.left) / this.#zoomLevel;
+      const y = (event.clientY - rect.top) / this.#zoomLevel;
 
       return { x, y };
     };
@@ -221,7 +221,7 @@ export class CustomToolWin extends ToolWin {
       canvas.removeEventListener("mouseup", onMouseUp);
     };
 
-		canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener("mousedown", onMouseDown);
   }
 
   drawDot(x, y, color) {
@@ -337,41 +337,34 @@ export class CustomToolWin extends ToolWin {
   }
 
   enableZoomIn() {
-    const ctx = this.#context;
-		const canvas = this.#canvas;
-
-		ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
-    this.#zoomLevel = Math.min(2, this.#zoomLevel * 1.2);
-
-    ctx.setTransform(this.#zoomLevel, 0, 0, this.#zoomLevel, 0, 0);
-    this.redrawShapes();
-
-		canvas.removeEventListener("click", this.#activeHandler);
-		this.#activeButton = null;
-    this.#activeHandler = null;
-
-		setTimeout(() => {
-			this.#button.classList.remove("active");
-		}, 250);
+		const maxZoom = 2.0736;
+    this.#zoomLevel = Math.min(maxZoom, this.#zoomLevel * 1.2);
+		this.rezoom();
   }
 
   enableZoomOut() {
+		const minZoom = 0.482253086;
+    this.#zoomLevel = Math.max(minZoom, this.#zoomLevel / 1.2);
+		this.rezoom();
+  }
+
+  rezoom() {
     const ctx = this.#context;
-		const canvas = this.#canvas;
+    const canvas = this.#canvas;
+		const zoomLevel = this.#zoomLevel;
+		const currentButton = this.#currentButton;
 
-		ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
-    this.#zoomLevel = Math.max(0.5, this.#zoomLevel / 1.2);
-
-    ctx.setTransform(this.#zoomLevel, 0, 0, this.#zoomLevel, 0, 0);
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
     this.redrawShapes();
 
-		canvas.removeEventListener("click", this.#activeHandler);
-		this.#activeButton = null;
+    canvas.removeEventListener("click", this.#activeHandler);
+    this.#activeButton = null;
     this.#activeHandler = null;
 
-		setTimeout(() => {
-			this.#button.classList.remove("active");
-		}, 250);
+    setTimeout(() => {
+      currentButton.classList.remove("active");
+    }, 250);
   }
 
   enableUndo() {
@@ -412,7 +405,7 @@ export class CustomToolWin extends ToolWin {
     this.#activeHandler = this.#actions[buttonName];
 
     canvas.addEventListener("click", this.#activeHandler);
-		this.#activeHandler();
+    this.#activeHandler();
 
     console.log(`${buttonName} активовано.`);
   }
@@ -425,9 +418,9 @@ export class CustomToolWin extends ToolWin {
     buttons.forEach((button, index) => {
       const tooltip = tooltips[index];
       button.addEventListener("click", () => {
-				this.#button = button;
-				this.toggleButton(tooltip);
-			});
+        this.#currentButton = button;
+        this.toggleButton(tooltip);
+      });
     });
   }
 }
