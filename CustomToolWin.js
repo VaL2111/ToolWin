@@ -357,7 +357,7 @@ export class CustomToolWin extends ToolWin {
     ctx.setTransform(zoomLevel, 0, 0, zoomLevel, 0, 0);
     this.redrawShapes();
 
-		this.resetActiveState();
+    this.resetActiveState();
   }
 
   enableUndo() {
@@ -402,7 +402,21 @@ export class CustomToolWin extends ToolWin {
   }
 
   enableClear() {
-    console.log("Очищення виконується.");
+    if (this.#shapes.length === 0) {
+      this.resetActiveState();
+      return;
+    }
+
+    const confirmation = confirm("Ви впевнені, що хочете очистити всі фігури?");
+
+    if (confirmation) {
+			const ctx = this.#context;
+
+      this.#shapes = [];
+      ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
+
+      this.resetActiveState();
+    }
   }
 
   toggleButton(buttonName) {
