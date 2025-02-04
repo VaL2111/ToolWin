@@ -3,14 +3,16 @@ import { ToolWin } from "./ToolWin.js";
 export class CustomToolWin extends ToolWin {
   #actions;
   #shapes;
-  #activeButton;
-  #activeHandler;
+  #activeButtonName;
   #canvas;
   #context;
   #color;
   #shapeTypes;
   #zoomLevel;
-  #currentButton;
+  #activeButton;
+  #onMouseDown;
+  #onMouseMove;
+  #onMouseUp;
 
   constructor() {
     super();
@@ -33,8 +35,7 @@ export class CustomToolWin extends ToolWin {
     };
 
     this.#shapes = [];
-    this.#activeButton = null;
-    this.#activeHandler = null;
+    this.#activeButtonName = null;
     this.#color = "black";
     this.#shapeTypes = {
       dot: "Малювання точки",
@@ -45,7 +46,7 @@ export class CustomToolWin extends ToolWin {
     };
 
     this.#zoomLevel = 1;
-    this.#currentButton = null;
+    this.#activeButton = null;
 
     this.#canvas = document.getElementById("drawingCanvas");
     this.#context = this.#canvas.getContext("2d");
@@ -57,7 +58,7 @@ export class CustomToolWin extends ToolWin {
     const shapes = this.#shapes;
     const color = this.#color;
     const shapeTypes = this.#shapeTypes;
-    let currentShapeType = this.#activeButton;
+    let currentShapeType = this.#activeButtonName;
 
     let isDrawing = false;
     let startX = null;
@@ -180,19 +181,16 @@ export class CustomToolWin extends ToolWin {
       }
     };
 
-    const onMouseDown = (event) => {
-      currentShapeType = this.#activeButton;
+    this.#onMouseDown = (event) => {
+      currentShapeType = this.#activeButtonName;
+      isDrawing = true;
 
       const { x, y } = calculateCoordinates(event);
       startX = x;
       startY = y;
-      isDrawing = true;
-
-      canvas.addEventListener("mousemove", onMouseMove);
-      canvas.addEventListener("mouseup", onMouseUp);
     };
 
-    const onMouseMove = (event) => {
+    this.#onMouseMove = (event) => {
       if (!isDrawing) return;
       const { x, y } = calculateCoordinates(event);
       endX = x;
@@ -200,7 +198,7 @@ export class CustomToolWin extends ToolWin {
       drawRubberFootprint();
     };
 
-    const onMouseUp = (event) => {
+    this.#onMouseUp = (event) => {
       if (!isDrawing) return;
       isDrawing = false;
 
@@ -215,13 +213,11 @@ export class CustomToolWin extends ToolWin {
       startY = null;
       endX = null;
       endY = null;
-
-      canvas.removeEventListener("mousedown", onMouseDown);
-      canvas.removeEventListener("mousemove", onMouseMove);
-      canvas.removeEventListener("mouseup", onMouseUp);
     };
 
-    canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener("mousedown", this.#onMouseDown);
+    canvas.addEventListener("mousemove", this.#onMouseMove);
+    canvas.addEventListener("mouseup", this.#onMouseUp);
   }
 
   drawDot(x, y, color) {
@@ -372,7 +368,6 @@ export class CustomToolWin extends ToolWin {
     const ctx = this.#context;
 
     shapes.pop();
-    console.log("Останню дію скасовано.");
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     this.redrawShapes();
@@ -381,15 +376,12 @@ export class CustomToolWin extends ToolWin {
   }
 
   resetActiveState() {
-    const canvas = this.#canvas;
-    const currentButton = this.#currentButton;
+    const activeButton = this.#activeButton;
 
-    canvas.removeEventListener("click", this.#activeHandler);
-    this.#activeButton = null;
-    this.#activeHandler = null;
+    this.#activeButtonName = null;
 
     setTimeout(() => {
-      currentButton.classList.remove("active");
+      activeButton.classList.remove("active");
     }, 250);
   }
 
@@ -410,7 +402,7 @@ export class CustomToolWin extends ToolWin {
     const confirmation = confirm("Ви впевнені, що хочете очистити всі фігури?");
 
     if (confirmation) {
-			const ctx = this.#context;
+      const ctx = this.#context;
 
       this.#shapes = [];
       ctx.clearRect(0, 0, this.#canvas.width, this.#canvas.height);
@@ -419,31 +411,24 @@ export class CustomToolWin extends ToolWin {
     }
   }
 
-  toggleButton(buttonName) {
+  clearAllEventListeners() {
     const canvas = this.#canvas;
 
-    if (this.#activeButton === buttonName) {
-      canvas.removeEventListener("click", this.#activeHandler);
-      console.log(`${this.#activeButton} деактивовано.`);
+    canvas.removeEventListener("mousedown", this.#onMouseDown);
+    canvas.removeEventListener("mousemove", this.#onMouseMove);
+    canvas.removeEventListener("mouseup", this.#onMouseUp);
+  }
 
-      this.#activeButton = null;
-      this.#activeHandler = null;
-
+  toggleButton(buttonName) {
+    if (this.#activeButtonName === buttonName) {
+      this.#activeButtonName = null;
+      this.clearAllEventListeners();
       return;
     }
 
-    if (this.#activeHandler) {
-      canvas.removeEventListener("click", this.#activeHandler);
-      console.log(`${this.#activeButton} деактивовано.`);
-    }
-
-    this.#activeButton = buttonName;
-    this.#activeHandler = this.#actions[buttonName];
-
-    canvas.addEventListener("click", this.#activeHandler);
-    this.#activeHandler();
-
-    console.log(`${buttonName} активовано.`);
+    this.clearAllEventListeners();
+    this.#activeButtonName = buttonName;
+    this.#actions[buttonName]();
   }
 
   createToolWinWithActions(nx, ny, buttonSize, images, tooltips) {
@@ -454,7 +439,7 @@ export class CustomToolWin extends ToolWin {
     buttons.forEach((button, index) => {
       const tooltip = tooltips[index];
       button.addEventListener("click", () => {
-        this.#currentButton = button;
+        this.#activeButton = button;
         this.toggleButton(tooltip);
       });
     });
